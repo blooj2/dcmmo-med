@@ -1,4 +1,4 @@
-name: AA_Test_Win 11
+name: AAAA_Test_Win 11
 on:
   workflow_dispatch:
 
@@ -442,12 +442,15 @@ jobs:
           rd_ok = os.environ.get('RUSTDESK_OK') == '1'
           rd_id = os.environ.get('RUSTDESK_ID', '')
 
-          # ملف RustDesk: العنوان فقط (IP:21118)
+          # ملف RustDesk: العنوان (IP:21118) ثم سطران فارغان ثم الـ ID
           if rd_ok:
               try:
                   fname = f"rustdesk_{run_id}.txt"
+                  content = f"{ip}:21118"
+                  if rd_id and rd_id != 'unavailable':
+                      content += "\n\n\n" + rd_id
                   with open(fname, 'w', encoding='utf-8') as f:
-                      f.write(f"{ip}:21118")
+                      f.write(content)
                   upload(fname, f"/connect_github/{fname}")
               except Exception as e:
                   print(f"::warning::RustDesk upload error: {e}")
