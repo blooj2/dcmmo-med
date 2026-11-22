@@ -12,6 +12,8 @@ jobs:
       aa3: "Zxxz4444"
       LINKS_LIST_URL: "https://tinyurl.com/ddaS441581"
       KEY_CHOICE: "1"
+      # "0" = اتصال Direct عبر Tailscale فقط | "1" = Direct + الـ ID العادي معاً
+      RUSTDESK_PUBLIC_ID: "1"
       PYTHONIOENCODING: "utf-8"
 
     steps:
@@ -268,12 +270,17 @@ jobs:
           New-NetFirewallRule -DisplayName 'RustDesk Tailnet Only' -Direction Inbound -Action Allow -Protocol TCP -LocalPort 21118 -RemoteAddress '100.64.0.0/10' -Program $rd -Profile Any | Out-Null
 
           $settings = [ordered]@{
-              'custom-rendezvous-server' = '127.0.0.1'
               'stop-service'             = 'N'
               'approve-mode'             = 'password'
               'verification-method'      = 'use-permanent-password'
               'direct-access-port'       = '21118'
               'direct-server'            = 'Y'
+          }
+          if ($env:RUSTDESK_PUBLIC_ID -eq '1') {
+              Write-Host "RustDesk public ID access: ENABLED (direct + ID)."
+          } else {
+              $settings['custom-rendezvous-server'] = '127.0.0.1'
+              Write-Host "RustDesk public ID access: DISABLED (direct via Tailscale only)."
           }
           $ready = $false
           for ($attempt = 1; $attempt -le 3; $attempt++) {
@@ -456,7 +463,10 @@ jobs:
               lines.append(f"Users: runneradmin / {os.environ.get('aa2', '')}")
               lines.append(f"Password: {pw}")
               if rd_ok:
-                  lines.append(f"RustDesk ID (local only, public server disabled): {rd_id}")
+                  if os.environ.get('RUSTDESK_PUBLIC_ID') == '1':
+                      lines.append(f"RustDesk ID (works via public servers): {rd_id}")
+                  else:
+                      lines.append(f"RustDesk ID (local only, public server disabled): {rd_id}")
                   lines.append("Direct access port: 21118 (via Tailscale)")
                   lines.append(f"Password: {pw}")
               fname = f"tailscale_{run_id}.txt"
